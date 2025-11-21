@@ -1,0 +1,31 @@
+name: 'Update schedule'
+
+on:
+    schedule:
+        - cron: '20 * * * *'
+    workflow_dispatch:
+    push:
+        branches:
+            - main
+jobs:
+    push:
+        runs-on: ${{ matrix.operating-system }}
+        timeout-minutes: 240
+        strategy:
+            matrix:
+                operating-system: [ 'ubuntu-latest' ]
+        steps:
+            - uses: actions/checkout@v3
+            - name: Mirror the gitee organization repos to Github.
+              run: |
+                git clone -b release https://mytv-android_admin:${{ secrets.GITEE_TOKEN }}@gitee.com/mytv-android/my-migu.git
+                cp  my-migu/* .
+                rm -rf my-migu
+                mv migu_github.m3u migu.m3u
+                rm migu_gitee.m3u
+                git config user.name "GitHub Action"
+                git config user.email "actions@github.com"
+                git add .
+                git reset --soft $(git rev-list --max-parents=0 HEAD)
+                git commit --amend -m "Github Action Auto Updated"
+                git push --force
